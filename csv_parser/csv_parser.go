@@ -17,22 +17,13 @@ type Employee struct {
 	Status  string
 }
 
-func NewEmployee() Employee {
-	return Employee{
-		Name:    "",
-		Species: "",
-		Day:     0,
-		Status:  "",
-	}
-}
-
 func main() {
 	filename := "data-messy.csv"
 	file, err := os.Open(filename)
 	var employees []Employee
 	if err != nil {
-		fmt.Print("ERROR\n", err)
-		return
+		fmt.Fprintln(os.Stderr, "error:", err)
+		os.Exit(1)
 	}
 	defer file.Close()
 
@@ -48,12 +39,16 @@ func main() {
 			fmt.Printf("Skipping malformed row: %v\n", row)
 			continue
 		}
-		newEmployee := NewEmployee()
+		newEmployee := Employee{}
 		fmt.Println(row)
 		if len(row) > 3 {
 			newEmployee.Name = strings.TrimSpace(row[0])
 			newEmployee.Species = strings.TrimSpace(row[1])
-			newEmployee.Day, _ = strconv.Atoi(strings.TrimSpace(row[2]))
+			newEmployee.Day, err = strconv.Atoi(strings.TrimSpace(row[2]))
+			if err != nil {
+				fmt.Println("Improper day format. Skipping line: ", row)
+				continue
+			}
 			newEmployee.Status = strings.TrimSpace(row[3])
 			employees = append(employees, newEmployee)
 		}
@@ -65,7 +60,7 @@ func main() {
 	for _, emp := range employees {
 		if strings.EqualFold("producing", emp.Status) {
 			producing += 1
-		} else if emp.Status == "harvested" {
+		} else if strings.EqualFold("harvested", emp.Status) {
 			harvested += 1
 		}
 
